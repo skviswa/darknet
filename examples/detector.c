@@ -567,6 +567,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
+    char *info;
 
     image **alphabet = load_alphabet();
     network *net = load_network(cfgfile, weightfile, 0);
@@ -603,7 +604,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             masks = calloc(l.w*l.h*l.n, sizeof(float*));
             for(j = 0; j < l.w*l.h*l.n; ++j) masks[j] = calloc(l.coords-4, sizeof(float *));
         }
-
+        
         float *X = sized.data;
         time=what_time_is_it_now();
         network_predict(net, X);
@@ -611,11 +612,14 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         get_region_boxes(l, im.w, im.h, net->w, net->h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
+        
         if(outfile){
+            info = strcat(outfile,".txt");
+            draw_detections_save(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes, info);
             save_image(im, outfile);
         }
         else{
+            draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);   
             save_image(im, "predictions");
 #ifdef OPENCV
             cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
